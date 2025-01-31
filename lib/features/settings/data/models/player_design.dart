@@ -1,0 +1,4 @@
+enum PlayerDesign {
+  normal,
+  fullscreenArtwork,
+}
