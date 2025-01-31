@@ -15,6 +15,7 @@ import 'package:music_player/core/utils/duration_formatter.dart';
 import 'package:music_player/core/extensions/list_item_style.dart';
 import 'cached_artwork.dart';
 import 'dart:io';
+import 'scroll_to_top_button.dart';
 
 class MediaList extends StatefulWidget {
   final List<SongModel> mediaItems;
@@ -45,58 +46,70 @@ class _MediaListState extends State<MediaList>
   bool get wantKeepAlive => true; // Tab'lar arası geçişte state'i koru
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    return Column(
-      children: [
-        // Üst bar - Sıralama ve görünüm seçenekleri
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.sort),
-                onPressed: () => _showSortOptions(context),
-                tooltip: 'Sıralama',
-              ),
-              IconButton(
-                icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-                onPressed: () {
-                  setState(() {
-                    _isGridView = !_isGridView;
-                  });
-                },
-                tooltip: _isGridView ? 'Liste Görünümü' : 'Grid Görünümü',
-              ),
-            ],
+    return Scaffold(
+      body: Column(
+        children: [
+          // Üst bar - Sıralama ve görünüm seçenekleri
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.sort),
+                  onPressed: () => _showSortOptions(context),
+                  tooltip: 'Sıralama',
+                ),
+                IconButton(
+                  icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
+                  onPressed: () {
+                    setState(() {
+                      _isGridView = !_isGridView;
+                    });
+                  },
+                  tooltip: _isGridView ? 'Liste Görünümü' : 'Grid Görünümü',
+                ),
+              ],
+            ),
           ),
-        ),
-        // Liste/Grid görünümü
-        Expanded(
-          child: BlocBuilder<MediaCubit, MediaState>(
-            builder: (context, state) {
-              if (state.status == MediaStatus.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          // Liste/Grid görünümü
+          Expanded(
+            child: BlocBuilder<MediaCubit, MediaState>(
+              builder: (context, state) {
+                if (state.status == MediaStatus.loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              if (state.status == MediaStatus.failure) {
-                return Center(child: Text('Hata: ${state.error}'));
-              }
+                if (state.status == MediaStatus.failure) {
+                  return Center(child: Text('Hata: ${state.error}'));
+                }
 
-              if (widget.mediaItems.isEmpty) {
-                return const Center(child: Text('Medya bulunamadı'));
-              }
+                if (widget.mediaItems.isEmpty) {
+                  return const Center(child: Text('Medya bulunamadı'));
+                }
 
-              final sortedItems = _getSortedSongs(widget.mediaItems);
+                final sortedItems = _getSortedSongs(widget.mediaItems);
 
-              return _isGridView
-                  ? _buildGridView(sortedItems)
-                  : _buildListView(sortedItems);
-            },
+                return _isGridView
+                    ? _buildGridView(sortedItems)
+                    : _buildListView(sortedItems);
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+      floatingActionButton: ScrollToTopButton(
+        scrollController: _scrollController,
+      ),
     );
   }
 

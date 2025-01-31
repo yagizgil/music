@@ -61,33 +61,30 @@ class MediaCacheManager {
 }
 
 class ArtworkCacheManager {
-  static final Map<int, Uint8List?> _artworkCache = {};
+  static final Map<int, Future<Uint8List?>> _artworkCache = {};
+  static const int maxCacheSize = 100;
 
   static Future<Uint8List?> getArtwork(int songId) async {
-    // Önbellekte varsa direkt döndür
+    // Önbellekte varsa döndür
     if (_artworkCache.containsKey(songId)) {
-      return _artworkCache[songId];
+      return await _artworkCache[songId];
     }
 
-    try {
-      final artwork = await OnAudioQuery().queryArtwork(
-        songId,
-        ArtworkType.AUDIO,
-        size: 200,
-        quality: 75,
-        format: ArtworkFormat.JPEG,
-      );
-
-      // Önbelleğe kaydet
-      _artworkCache[songId] = artwork;
-      return artwork;
-    } catch (e) {
-      print('Artwork yükleme hatası: $e');
-      return null;
+    // Önbellek boyutunu kontrol et
+    if (_artworkCache.length >= maxCacheSize) {
+      _artworkCache.remove(_artworkCache.keys.first);
     }
-  }
 
-  static void clearCache() {
-    _artworkCache.clear();
+    // Yeni artwork yükleme işlemini önbelleğe al
+    final artworkFuture = OnAudioQuery().queryArtwork(
+      songId,
+      ArtworkType.AUDIO,
+      size: 200,
+      quality: 75,
+      format: ArtworkFormat.JPEG,
+    );
+
+    _artworkCache[songId] = artworkFuture;
+    return artworkFuture;
   }
 }

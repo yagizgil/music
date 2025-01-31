@@ -36,6 +36,8 @@ class MediaState extends Equatable {
   final String? selectedFolder;
   final List<SongModel> tracks;
   final Set<int> pinnedFavorites;
+  final int currentPage;
+  final List<SongModel> displayedSongs;
 
   bool get isLoading => status == MediaStatus.loading;
 
@@ -59,6 +61,8 @@ class MediaState extends Equatable {
     this.selectedFolder,
     this.tracks = const [],
     this.pinnedFavorites = const {},
+    this.currentPage = 0,
+    this.displayedSongs = const [],
   });
 
   MediaState copyWith({
@@ -81,6 +85,8 @@ class MediaState extends Equatable {
     String? selectedFolder,
     List<SongModel>? tracks,
     Set<int>? pinnedFavorites,
+    int? currentPage,
+    List<SongModel>? displayedSongs,
   }) {
     return MediaState(
       status: status ?? this.status,
@@ -102,6 +108,8 @@ class MediaState extends Equatable {
       selectedFolder: selectedFolder ?? this.selectedFolder,
       tracks: tracks ?? this.tracks,
       pinnedFavorites: pinnedFavorites ?? this.pinnedFavorites,
+      currentPage: currentPage ?? this.currentPage,
+      displayedSongs: displayedSongs ?? this.displayedSongs,
     );
   }
 
@@ -126,6 +134,8 @@ class MediaState extends Equatable {
         selectedFolder,
         tracks,
         pinnedFavorites,
+        currentPage,
+        displayedSongs,
       ];
 
   int getFolderTrackCount(String folderPath) {

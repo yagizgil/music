@@ -905,4 +905,25 @@ class MediaCubit extends Cubit<MediaState> {
         .where((track) => track.path.startsWith(folderPath))
         .toList();
   }
+
+  static const int pageSize = 20;
+
+  Future<void> loadMediaPage(int page) async {
+    try {
+      final start = page * pageSize;
+      final end = start + pageSize;
+
+      if (start >= state.songs.length) return;
+
+      final pageItems = state.songs
+          .sublist(start, end > state.songs.length ? state.songs.length : end);
+
+      emit(state.copyWith(
+        currentPage: page,
+        displayedSongs: [...state.displayedSongs, ...pageItems],
+      ));
+    } catch (e) {
+      print('Sayfa yükleme hatası: $e');
+    }
+  }
 }

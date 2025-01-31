@@ -108,24 +108,33 @@ class _HomePageState extends State<HomePage>
                   body: TabBarView(
                     controller: _tabController,
                     children: [
-                      const RecentlyPlayedPage(
-                          key: PageStorageKey('recently_played')),
-                      const MostPlayedPage(key: PageStorageKey('most_played')),
-                      BlocBuilder<MediaCubit, MediaState>(
-                        builder: (context, state) {
-                          return MediaList(
-                            key: const PageStorageKey('all_songs'),
-                            mediaItems: state.songs,
-                            isGridView: false,
-                            onItemTap: (track) {
-                              context.read<AudioPlayerCubit>().play(
-                                    track,
-                                    playlist: state.songs,
-                                    source: PlaylistSource.allSongs,
-                                  );
-                            },
-                          );
-                        },
+                      _KeepAlivePage(
+                        child: const RecentlyPlayedPage(
+                            key: PageStorageKey('recently_played')),
+                      ),
+                      _KeepAlivePage(
+                        child: const MostPlayedPage(
+                            key: PageStorageKey('most_played')),
+                      ),
+                      _KeepAlivePage(
+                        child: BlocBuilder<MediaCubit, MediaState>(
+                          buildWhen: (previous, current) =>
+                              previous.songs != current.songs,
+                          builder: (context, state) {
+                            return MediaList(
+                              key: const PageStorageKey('all_songs'),
+                              mediaItems: state.songs,
+                              isGridView: false,
+                              onItemTap: (track) {
+                                context.read<AudioPlayerCubit>().play(
+                                      track,
+                                      playlist: state.songs,
+                                      source: PlaylistSource.allSongs,
+                                    );
+                              },
+                            );
+                          },
+                        ),
                       ),
                       const FavoritesList(key: PageStorageKey('favorites')),
                       const AlbumList(key: PageStorageKey('albums')),
@@ -169,17 +178,17 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
-// KeepAlive widget'ı
-class KeepAlive extends StatefulWidget {
+// TabBarView içindeki sayfaları AutomaticKeepAliveClientMixin ile sarmalayalım
+class _KeepAlivePage extends StatefulWidget {
   final Widget child;
 
-  const KeepAlive({super.key, required this.child});
+  const _KeepAlivePage({required this.child});
 
   @override
-  State<KeepAlive> createState() => _KeepAliveState();
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
 }
 
-class _KeepAliveState extends State<KeepAlive>
+class _KeepAlivePageState extends State<_KeepAlivePage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
