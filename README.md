@@ -39,25 +39,15 @@ A modern and feature-rich music player application built with Flutter, offering 
 ### Database
 - sqflite: ^2.0.0
 
-## Project Structure
-
-```
-lib/
-├── core/
-│   ├── extensions/
-│   └── theme/
-├── features/
-│   ├── home/
-│   ├── media/
-│   ├── player/
-│   └── settings/
-```
 
 ## Getting Started
 
-1. Clone the repository: git clone https://github.com/yagizgil/music.git
-2. Install dependencies: flutter pub get
-3. Run the app: flutter run
+1. Clone the repository: git clone 
+```https://github.com/yagizgil/music.git```
+2. Install dependencies: 
+```flutter pub get```
+3. Run the app: 
+```flutter run```
 
 ## Requirements
 
@@ -108,20 +98,6 @@ Flutter ile geliştirilmiş, Material 3 tasarımına sahip, zengin özellikli mo
 
 ### Database
 - sqflite: ^2.0.0
-
-## Proje Yapısı
-
-```
-lib/
-├── core/
-│   ├── extensions/
-│   └── theme/
-├── features/
-│   ├── home/
-│   ├── media/
-│   ├── player/
-│   └── settings/
-```
 
 ## Başlangıç
 
