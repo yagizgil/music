@@ -160,47 +160,17 @@ class _PlayerPageState extends State<PlayerPage> {
                 ),
               ),
               const SizedBox(height: 32),
-              Container(
-                height: MediaQuery.of(context).size.width - 64,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+              RepaintBoundary(
                 child: Hero(
                   tag: 'artwork_${state.currentSong!.id}',
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: QueryArtworkWidget(
-                          id: state.currentSong!.id,
-                          type: ArtworkType.AUDIO,
-                          format: ArtworkFormat.JPEG,
-                          size: 1000,
-                          quality: 100,
-                          artworkQuality: FilterQuality.high,
-                          artworkBorder: BorderRadius.zero,
-                          artworkFit: BoxFit.cover,
-                          keepOldArtwork: true,
-                          nullArtworkWidget: Container(
-                            color: colorScheme.primaryContainer,
-                            child: Icon(
-                              Icons.music_note,
-                              color: colorScheme.onPrimaryContainer,
-                              size: 64,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  child: CachedArtwork(
+                    key: ValueKey('player_artwork_${state.currentSong!.id}'),
+                    id: state.currentSong!.id,
+                    size: MediaQuery.of(context).size.width - 64,
+                    memCacheWidth:
+                        (MediaQuery.of(context).size.width - 64).toInt(),
+                    memCacheHeight:
+                        (MediaQuery.of(context).size.width - 64).toInt(),
                   ),
                 ),
               ),
@@ -335,10 +305,18 @@ class _PlayerPageState extends State<PlayerPage> {
                   ),
                   IconButton(
                     icon: Icon(
-                      state.loopMode ? Icons.repeat_one : Icons.repeat,
-                      color: state.loopMode
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                      switch (context.select(
+                          (AudioPlayerCubit cubit) => cubit.player.loopMode)) {
+                        LoopMode.off => Icons.repeat,
+                        LoopMode.one => Icons.repeat_one,
+                        LoopMode.all => Icons.repeat,
+                      },
+                      color: switch (context.select(
+                          (AudioPlayerCubit cubit) => cubit.player.loopMode)) {
+                        LoopMode.off => Colors.white.withOpacity(0.5),
+                        LoopMode.one => Colors.white,
+                        LoopMode.all => Colors.white,
+                      },
                     ),
                     onPressed: () =>
                         context.read<AudioPlayerCubit>().toggleLoopMode(),
@@ -416,18 +394,8 @@ class _PlayerPageState extends State<PlayerPage> {
                           id: song.id,
                           size: 48,
                           borderRadius: 8,
-                          nullArtworkWidget: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.music_note,
-                              color: colorScheme.onPrimaryContainer,
-                            ),
-                          ),
+                          memCacheWidth: 48,
+                          memCacheHeight: 48,
                         ),
                       ),
                       title: Text(
@@ -444,12 +412,13 @@ class _PlayerPageState extends State<PlayerPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      onTap: () => context.read<AudioPlayerCubit>().play(
-                            song,
-                            playlist: state.currentPlaylist,
-                            source: state.playlistSource,
-                            albumId: state.albumId,
-                          ),
+                      onTap: () {
+                        context.read<AudioPlayerCubit>().play(
+                              song,
+                              playlist: widget.playlist,
+                              source: PlaylistSource.allSongs,
+                            );
+                      },
                     ),
                   );
                 },

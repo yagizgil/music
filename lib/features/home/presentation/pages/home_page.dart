@@ -49,103 +49,97 @@ class _HomePageState extends State<HomePage>
     return DefaultTabController(
       length: 6,
       child: Scaffold(
-        body: BlocProvider(
-          create: (context) => AudioPlayerCubit(
-            audioPlayer: AudioPlayer(),
-            mediaCubit: context.read<MediaCubit>(),
-          ),
-          child: Column(
-            children: [
-              Expanded(
-                child: NestedScrollView(
-                  headerSliverBuilder: (context, innerBoxIsScrolled) {
-                    return [
-                      SliverAppBar(
-                        floating: true,
-                        snap: true,
-                        pinned: false,
-                        systemOverlayStyle: const SystemUiOverlayStyle(
-                          statusBarColor: Colors.transparent,
-                          statusBarBrightness: Brightness.dark,
-                          statusBarIconBrightness: Brightness.light,
-                          systemNavigationBarColor: Colors.transparent,
-                          systemStatusBarContrastEnforced: false,
-                        ),
-                        title: const Text('Müzik Oynatıcı'),
-                        actions: [
-                          IconButton(
-                            icon: const Icon(Icons.search),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const SearchPage(),
-                                ),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.settings),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const SettingsPage(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+        body: Column(
+          children: [
+            Expanded(
+              child: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    SliverAppBar(
+                      floating: true,
+                      snap: true,
+                      pinned: false,
+                      systemOverlayStyle: const SystemUiOverlayStyle(
+                        statusBarColor: Colors.transparent,
+                        statusBarBrightness: Brightness.dark,
+                        statusBarIconBrightness: Brightness.light,
+                        systemNavigationBarColor: Colors.transparent,
+                        systemStatusBarContrastEnforced: false,
                       ),
-                      SliverPersistentHeader(
-                        pinned: true,
-                        delegate: _SliverAppBarDelegate(
-                          CustomTabBar(controller: _tabController),
-                        ),
-                      ),
-                    ];
-                  },
-                  body: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _KeepAlivePage(
-                        child: const RecentlyPlayedPage(
-                            key: PageStorageKey('recently_played')),
-                      ),
-                      _KeepAlivePage(
-                        child: const MostPlayedPage(
-                            key: PageStorageKey('most_played')),
-                      ),
-                      _KeepAlivePage(
-                        child: BlocBuilder<MediaCubit, MediaState>(
-                          buildWhen: (previous, current) =>
-                              previous.songs != current.songs,
-                          builder: (context, state) {
-                            return MediaList(
-                              key: const PageStorageKey('all_songs'),
-                              mediaItems: state.songs,
-                              isGridView: false,
-                              onItemTap: (track) {
-                                context.read<AudioPlayerCubit>().play(
-                                      track,
-                                      playlist: state.songs,
-                                      source: PlaylistSource.allSongs,
-                                    );
-                              },
+                      title: const Text('Müzik Oynatıcı'),
+                      actions: [
+                        IconButton(
+                          icon: const Icon(Icons.search),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SearchPage(),
+                              ),
                             );
                           },
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.settings),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SettingsPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _SliverAppBarDelegate(
+                        CustomTabBar(controller: _tabController),
                       ),
-                      const FavoritesList(key: PageStorageKey('favorites')),
-                      const AlbumList(key: PageStorageKey('albums')),
-                      const FolderList(key: PageStorageKey('folders')),
-                    ],
-                  ),
+                    ),
+                  ];
+                },
+                body: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _KeepAlivePage(
+                      child: const RecentlyPlayedPage(
+                          key: PageStorageKey('recently_played')),
+                    ),
+                    _KeepAlivePage(
+                      child: const MostPlayedPage(
+                          key: PageStorageKey('most_played')),
+                    ),
+                    _KeepAlivePage(
+                      child: BlocBuilder<MediaCubit, MediaState>(
+                        buildWhen: (previous, current) =>
+                            previous.songs != current.songs,
+                        builder: (context, state) {
+                          return MediaList(
+                            key: const PageStorageKey('all_songs'),
+                            mediaItems: state.songs,
+                            isGridView: false,
+                            onItemTap: (track) {
+                              context.read<AudioPlayerCubit>().play(
+                                    track,
+                                    playlist: state.songs,
+                                    source: PlaylistSource.allSongs,
+                                  );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const FavoritesList(key: PageStorageKey('favorites')),
+                    const AlbumList(key: PageStorageKey('albums')),
+                    const FolderList(key: PageStorageKey('folders')),
+                  ],
                 ),
               ),
-              const MiniPlayer(),
-            ],
-          ),
+            ),
+            const MiniPlayer(),
+          ],
         ),
       ),
     );

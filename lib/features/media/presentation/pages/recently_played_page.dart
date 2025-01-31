@@ -60,6 +60,7 @@ class _RecentlyPlayedPageState extends State<RecentlyPlayedPage> {
       ),
       floatingActionButton: ScrollToTopButton(
         scrollController: _scrollController,
+        heroTag: 'recently_played_scroll_top',
       ),
     );
   }

@@ -5,7 +5,9 @@ import 'dart:typed_data';
 import '../../../player/presentation/cubit/audio_player_cubit.dart';
 import '../../../player/presentation/pages/player_page.dart';
 import '../../../media/presentation/cubit/media_cubit.dart';
+import '../../../media/presentation/widgets/cached_artwork.dart';
 import 'particle_effect_painter.dart';
+import 'package:rxdart/rxdart.dart';
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
@@ -51,10 +53,8 @@ class _MiniPlayerState extends State<MiniPlayer> {
         transform: Matrix4.translationValues(0, _dragOffset, 0),
         child: BlocBuilder<AudioPlayerCubit, AudioPlayerState>(
           buildWhen: (previous, current) =>
-              previous.currentSong != current.currentSong ||
-              previous.isPlaying != current.isPlaying ||
-              previous.position != current.position ||
-              previous.duration != current.duration,
+              previous.currentSong?.id != current.currentSong?.id ||
+              previous.isPlaying != current.isPlaying,
           builder: (context, state) {
             if (state.currentSong == null) return const SizedBox.shrink();
 
@@ -81,36 +81,41 @@ class _MiniPlayerState extends State<MiniPlayer> {
                     stream: context
                         .read<AudioPlayerCubit>()
                         .audioPlayer
-                        .positionStream,
+                        .positionStream
+                        .distinct()
+                        .throttleTime(const Duration(milliseconds: 500)),
                     builder: (context, snapshot) {
                       final position = snapshot.data ?? Duration.zero;
                       final duration = state.duration;
 
-                      return ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
-                        ),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.1),
-                                Theme.of(context).colorScheme.surface,
-                              ],
-                              stops: [
-                                position.inMilliseconds /
-                                    duration.inMilliseconds,
-                                position.inMilliseconds /
-                                    duration.inMilliseconds,
-                              ],
+                      return RepaintBoundary(
+                        // RepaintBoundary ekle
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.1),
+                                  Theme.of(context).colorScheme.surface,
+                                ],
+                                stops: [
+                                  position.inMilliseconds /
+                                      duration.inMilliseconds,
+                                  position.inMilliseconds /
+                                      duration.inMilliseconds,
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -123,45 +128,16 @@ class _MiniPlayerState extends State<MiniPlayer> {
                     child: Row(
                       children: [
                         const SizedBox(width: 8),
-                        Hero(
-                          tag: 'artwork_${state.currentSong!.id}',
-                          child: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: QueryArtworkWidget(
-                                id: state.currentSong!.id,
-                                type: ArtworkType.AUDIO,
-                                format: ArtworkFormat.JPEG,
-                                size: 1000,
-                                quality: 100,
-                                artworkQuality: FilterQuality.high,
-                                artworkBorder: BorderRadius.zero,
-                                artworkFit: BoxFit.cover,
-                                keepOldArtwork: true,
-                                nullArtworkWidget: Container(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer,
-                                  child: Icon(
-                                    Icons.music_note,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
+                        RepaintBoundary(
+                          child: Hero(
+                            tag: 'artwork_${state.currentSong!.id}',
+                            child: CachedArtwork(
+                              key: ValueKey(
+                                  'mini_player_artwork_${state.currentSong!.id}'),
+                              id: state.currentSong!.id,
+                              size: 48,
+                              memCacheWidth: 48,
+                              memCacheHeight: 48,
                             ),
                           ),
                         ),

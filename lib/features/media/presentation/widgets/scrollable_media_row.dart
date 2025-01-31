@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import '../cubit/media_cubit.dart';
 import '../../../player/presentation/cubit/audio_player_cubit.dart';
+import '../../../player/domain/enums/playlist_source.dart';
 import 'package:music_player/core/utils/duration_formatter.dart';
 import 'package:music_player/core/extensions/list_item_style.dart';
 import 'cached_artwork.dart';
@@ -91,8 +92,8 @@ class ScrollableMediaRow extends StatelessWidget {
                   ),
                   onTap: () {
                     context.read<AudioPlayerCubit>().playPlaylist(
-                          songs: songs,
-                          initialIndex: songs.indexOf(song),
+                          songs,
+                          source: PlaylistSource.allSongs,
                         );
                   },
                 ).withListItemStyle(

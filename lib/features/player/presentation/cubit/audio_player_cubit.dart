@@ -17,34 +17,33 @@ import '../../domain/enums/playlist_source.dart';
 part 'audio_player_state.dart';
 
 class AudioPlayerCubit extends Cubit<AudioPlayerState> {
-  final AudioPlayer audioPlayer;
+  final AudioPlayer player;
   final MediaCubit mediaCubit;
 
+  AudioPlayer get audioPlayer => player;
+
   AudioPlayerCubit({
-    required this.audioPlayer,
+    required this.player,
     required this.mediaCubit,
   }) : super(const AudioPlayerState()) {
-    _setupListeners(); // Constructor'da dinleyicileri başlat
+    _setupListeners();
   }
 
   void _setupListeners() {
     // Player durumu dinleyicisi
-    audioPlayer.playerStateStream.listen((playerState) {
-      print(
-          '🎵 Player durumu: ${playerState.processingState}, Playing: ${playerState.playing}');
-
+    player.playerStateStream.listen((playerState) {
       emit(state.copyWith(
         isPlaying: playerState.playing,
         status: _getStatusFromProcessingState(playerState.processingState),
       ));
     });
 
-    // Şarkı değişim ve süre bilgilerini birlikte dinle
+    // Şarkı değişim ve süre bilgilerini birleştirip dinle
     Rx.combineLatest3<Duration?, Duration?, int?,
         ({Duration? duration, Duration? position, int? index})>(
-      audioPlayer.durationStream,
-      audioPlayer.positionStream,
-      audioPlayer.currentIndexStream,
+      player.durationStream,
+      player.positionStream,
+      player.currentIndexStream,
       (duration, position, index) => (
         duration: duration,
         position: position,
@@ -54,13 +53,8 @@ class AudioPlayerCubit extends Cubit<AudioPlayerState> {
       if (data.index != null &&
           data.index! >= 0 &&
           data.index! < state.currentPlaylist.length) {
-        final currentSong = state.currentPlaylist[data.index!];
-        print('📑 Şarkı değişti: ${currentSong.title}');
-        print('⏱️ Süre: ${data.duration?.inSeconds ?? 0} saniye');
-        print('⏱️ Pozisyon: ${data.position?.inSeconds ?? 0} saniye');
-
         emit(state.copyWith(
-          currentSong: currentSong,
+          currentSong: state.currentPlaylist[data.index!],
           currentIndex: data.index,
           duration: data.duration ?? Duration.zero,
           position: data.position ?? Duration.zero,
@@ -69,188 +63,162 @@ class AudioPlayerCubit extends Cubit<AudioPlayerState> {
       }
     });
 
-    // Sequence durumu dinleyicisi
-    audioPlayer.sequenceStateStream.listen((sequenceState) {
-      if (sequenceState != null) {
-        final currentItem = sequenceState.currentSource;
-        if (currentItem != null) {
-          final mediaItem = currentItem.tag as MediaItem;
-          print('🎵 Çalan şarkı: ${mediaItem.title}');
-
-          // Playlist durumunu güncelle
-          emit(state.copyWith(
-            shuffleMode: sequenceState.shuffleModeEnabled,
-            loopMode: sequenceState.loopMode == LoopMode.one,
-          ));
-        }
-      }
+    // Shuffle modu dinleyicisi
+    player.shuffleModeEnabledStream.listen((enabled) {
+      emit(state.copyWith(shuffleMode: enabled));
     });
-  }
 
-  void updatePlaybackState(PlayerState playerState) {
-    emit(state.copyWith(
-      isPlaying: playerState.playing,
-      status: _getStatusFromProcessingState(playerState.processingState),
-    ));
-  }
-
-  void updateCurrentSongIndex(int index) {
-    if (index >= 0 && index < state.currentPlaylist.length) {
+    // Loop modu dinleyicisi
+    player.loopModeStream.listen((loopMode) {
       emit(state.copyWith(
-        currentSong: state.currentPlaylist[index],
-        currentIndex: index,
+        loopMode: loopMode == LoopMode.one || loopMode == LoopMode.all,
       ));
-    }
-  }
-
-  void updatePosition(Duration position) {
-    emit(state.copyWith(
-      position: position,
-      currentPosition: position.inMilliseconds.toDouble(),
-    ));
-  }
-
-  void updateDuration(Duration duration) {
-    emit(state.copyWith(duration: duration));
-  }
-
-  void updatePlaylist(List<SongModel> playlist, int currentIndex) {
-    emit(state.copyWith(
-      currentPlaylist: playlist,
-      currentSong: playlist[currentIndex],
-      currentIndex: currentIndex,
-    ));
+    });
   }
 
   Future<void> play(
     SongModel song, {
     required List<SongModel> playlist,
     required PlaylistSource source,
-    String? albumId,
   }) async {
     try {
-      final index = playlist.indexOf(song);
-      if (index != -1) {
-        await playPlaylist(songs: playlist, initialIndex: index);
-        emit(state.copyWith(
-          playlistSource: source,
-          albumId: albumId,
-        ));
+      // Aynı şarkıyı çalmaya çalışıyorsak sadece play/pause yap
+      if (state.currentSong?.id == song.id) {
+        if (player.playing) {
+          await player.pause();
+        } else {
+          await player.play();
+        }
+        return;
       }
-    } catch (e) {
-      print('❌ Play hatası: $e');
-    }
-  }
 
-  Future<void> playPlaylist({
-    required List<SongModel> songs,
-    required int initialIndex,
-  }) async {
-    try {
-      print('🎵 Playlist yükleniyor (${songs.length} şarkı)');
+      // Önce mevcut çalmayı durdur
+      await player.stop();
 
-      // Önce mevcut çalanı durdur
-      await audioPlayer.stop();
-
-      // Playlist'i hazırla
-      final playlist = ConcatenatingAudioSource(
-        children: songs
-            .map((song) => AudioSource.uri(
-                  Uri.parse(song.data),
-                  tag: MediaItem(
-                    id: song.id.toString(),
-                    album: song.album ?? '',
-                    title: song.title,
-                    artist: song.artist ?? 'Bilinmeyen Sanatçı',
-                    duration: Duration(milliseconds: song.duration ?? 0),
-                  ),
-                ))
-            .toList(),
+      // Yeni playlist için AudioSource oluştur
+      final audioSource = ConcatenatingAudioSource(
+        children: playlist.map((song) {
+          return AudioSource.uri(
+            Uri.parse(song.data),
+            tag: MediaItem(
+              id: song.id.toString(),
+              title: song.title,
+              artist: song.artist ?? 'Bilinmeyen Sanatçı',
+              duration: Duration(milliseconds: song.duration ?? 0),
+              // Android MediaStore URI kullan
+              artUri: Uri.parse(
+                  'content://media/external/audio/media/${song.id}/albumart'),
+              // Yedek olarak dosya yolunu da ekle
+              extras: {
+                'artworkPath': song.data,
+                'artworkId': song.id.toString(),
+              },
+            ),
+          );
+        }).toList(),
       );
 
-      // Playlist'i ayarla
-      await audioPlayer.setAudioSource(
-        playlist,
-        initialIndex: initialIndex,
-      );
+      final initialIndex = playlist.indexOf(song);
 
       // State'i güncelle
-      updatePlaylist(songs, initialIndex);
-
-      // Çalmaya başla
-      await audioPlayer.play();
-
-      print('✅ Playlist başlatıldı: ${songs[initialIndex].title}');
-    } catch (e) {
-      print('❌ PlayPlaylist hatası: $e');
       emit(state.copyWith(
-        status: AudioStatus.error,
-        error: e.toString(),
+        currentSong: song,
+        currentPlaylist: playlist,
+        currentIndex: initialIndex,
+        playlistSource: source,
+        status: AudioStatus.loading,
       ));
+
+      // Yeni playlist'i ayarla ve çal
+      await player.setAudioSource(audioSource, initialIndex: initialIndex);
+      await player.setLoopMode(LoopMode.all);
+      await player.play();
+    } catch (e) {
+      print('Play error: $e');
+      emit(state.copyWith(status: AudioStatus.error));
     }
   }
 
   Future<void> togglePlayPause() async {
     try {
-      if (audioPlayer.playing) {
-        await audioPlayer.pause();
+      if (player.playing) {
+        await player.pause();
       } else {
-        await audioPlayer.play();
+        await player.play();
       }
     } catch (e) {
-      print('❌ TogglePlayPause hatası: $e');
-    }
-  }
-
-  Future<void> next() async {
-    try {
-      await audioPlayer.seekToNext();
-    } catch (e) {
-      print('❌ Next hatası: $e');
-    }
-  }
-
-  Future<void> previous() async {
-    try {
-      await audioPlayer.seekToPrevious();
-    } catch (e) {
-      print('❌ Previous hatası: $e');
+      print('Toggle play/pause error: $e');
     }
   }
 
   Future<void> seek(Duration position) async {
     try {
-      print('⏩ Pozisyon değiştiriliyor: ${position.inSeconds} saniye');
-      await audioPlayer.seek(position);
-
-      // Seek sonrası state'i hemen güncelle
+      await player.seek(position);
       emit(state.copyWith(
         position: position,
         currentPosition: position.inMilliseconds.toDouble(),
       ));
     } catch (e) {
-      print('❌ Seek hatası: $e');
+      print('Seek error: $e');
     }
   }
 
-  Future<void> toggleLoopMode() async {
+  Future<void> next() async {
     try {
-      final newLoopMode = !state.loopMode;
-      await audioPlayer.setLoopMode(newLoopMode ? LoopMode.one : LoopMode.off);
-      emit(state.copyWith(loopMode: newLoopMode));
+      await player.seekToNext();
     } catch (e) {
-      print('❌ ToggleLoopMode hatası: $e');
+      print('Next error: $e');
+    }
+  }
+
+  Future<void> previous() async {
+    try {
+      await player.seekToPrevious();
+    } catch (e) {
+      print('Previous error: $e');
     }
   }
 
   Future<void> toggleShuffle() async {
     try {
       final newShuffleMode = !state.shuffleMode;
-      await audioPlayer.setShuffleModeEnabled(newShuffleMode);
+      await player.setShuffleModeEnabled(newShuffleMode);
       emit(state.copyWith(shuffleMode: newShuffleMode));
     } catch (e) {
-      print('❌ ToggleShuffle hatası: $e');
+      print('Toggle shuffle error: $e');
     }
+  }
+
+  Future<void> toggleLoopMode() async {
+    try {
+      final currentMode = player.loopMode;
+      final newMode = switch (currentMode) {
+        LoopMode.off => LoopMode.all, // Kapalıysa playlist döngüsü
+        LoopMode.all =>
+          LoopMode.one, // Playlist döngüsündeyse tek şarkı döngüsü
+        LoopMode.one => LoopMode.off, // Tek şarkı döngüsündeyse kapat
+      };
+
+      await player.setLoopMode(newMode);
+      emit(state.copyWith(
+        loopMode: newMode == LoopMode.one || newMode == LoopMode.all,
+      ));
+    } catch (e) {
+      print('Toggle loop mode error: $e');
+    }
+  }
+
+  Future<void> playPlaylist(
+    List<SongModel> playlist, {
+    int initialIndex = 0,
+    required PlaylistSource source,
+  }) async {
+    if (playlist.isEmpty) return;
+    await play(
+      playlist[initialIndex],
+      playlist: playlist,
+      source: source,
+    );
   }
 
   AudioStatus _getStatusFromProcessingState(ProcessingState state) {
@@ -261,10 +229,23 @@ class AudioPlayerCubit extends Cubit<AudioPlayerState> {
       case ProcessingState.ready:
         return AudioStatus.playing;
       case ProcessingState.completed:
-        return AudioStatus.stopped;
       case ProcessingState.idle:
         return AudioStatus.stopped;
     }
+  }
+
+  @override
+  Future<void> close() async {
+    try {
+      // Önce stream'leri durdur
+      await player.stop();
+      // Bekle ve sonra dispose et
+      await Future.delayed(const Duration(milliseconds: 100));
+      await player.dispose();
+    } catch (e) {
+      print('Close error: $e');
+    }
+    return super.close();
   }
 }
 

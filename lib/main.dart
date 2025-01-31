@@ -27,10 +27,15 @@ void main() async {
     androidNotificationChannelName: 'Müzik Oynatıcı',
     androidNotificationOngoing: true,
     androidShowNotificationBadge: true,
-    androidStopForegroundOnPause: true, // Duraklatıldığında bildirimi küçült
+    androidStopForegroundOnPause: true,
     fastForwardInterval: const Duration(seconds: 10),
     rewindInterval: const Duration(seconds: 10),
-    preloadArtwork: true, // Artwork'ü önceden yükle
+    preloadArtwork: true,
+    androidNotificationIcon: 'mipmap/ic_launcher',
+    notificationColor: const Color(0xFF1E1B1E),
+    androidNotificationClickStartsActivity: true,
+    artDownscaleWidth: 300,
+    artDownscaleHeight: 300,
   );
 
   final prefs = await SharedPreferences.getInstance();
@@ -56,6 +61,8 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  final audioPlayer = AudioPlayer();
+
   runApp(
     MultiProvider(
       providers: [
@@ -68,9 +75,9 @@ void main() async {
             databaseService: databaseService,
           ),
         ),
-        BlocProvider(
+        BlocProvider<AudioPlayerCubit>(
           create: (context) => AudioPlayerCubit(
-            audioPlayer: AudioPlayer(),
+            player: audioPlayer,
             mediaCubit: context.read<MediaCubit>(),
           ),
         ),

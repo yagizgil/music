@@ -12,6 +12,7 @@ import '../widgets/sort_options_sheet.dart';
 import '../widgets/media_list.dart';
 import '../widgets/cached_artwork.dart';
 import 'package:music_player/core/extensions/list_item_style.dart';
+import '../widgets/scroll_to_top_button.dart';
 
 class AlbumDetailPage extends StatefulWidget {
   final CustomAlbum album;
@@ -22,201 +23,181 @@ class AlbumDetailPage extends StatefulWidget {
 }
 
 class _AlbumDetailPageState extends State<AlbumDetailPage> {
+  final ScrollController _scrollController = ScrollController();
   MediaSortType _sortType = MediaSortType.title;
   SortOrder _sortOrder = SortOrder.ascending;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            actions: [
-              PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    child: const Text('Kapak Fotoğrafını Değiştir'),
-                    onTap: () => _changeAlbumCover(context),
-                  ),
-                  PopupMenuItem(
-                    child: const Text('Albümü Düzenle'),
-                    onTap: () => _editAlbum(context),
-                  ),
-                  PopupMenuItem(
-                    child: const Text('Albümü Sil'),
-                    onTap: () => _deleteAlbum(context),
-                  ),
-                ],
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(widget.album.name),
-              background: widget.album.coverPath != null
-                  ? Image.file(
-                      File(widget.album.coverPath!),
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      color: Theme.of(context).colorScheme.primary,
-                      child: const Center(
-                        child: Icon(
-                          Icons.album,
-                          size: 72,
-                          color: Colors.white,
+    return BlocProvider.value(
+      value: context.read<AudioPlayerCubit>(),
+      child: Scaffold(
+        body: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 200,
+              pinned: true,
+              actions: [
+                PopupMenuButton(
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      child: const Text('Kapak Fotoğrafını Değiştir'),
+                      onTap: () => _changeAlbumCover(context),
+                    ),
+                    PopupMenuItem(
+                      child: const Text('Albümü Düzenle'),
+                      onTap: () => _editAlbum(context),
+                    ),
+                    PopupMenuItem(
+                      child: const Text('Albümü Sil'),
+                      onTap: () => _deleteAlbum(context),
+                    ),
+                  ],
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(widget.album.name),
+                background: widget.album.coverPath != null
+                    ? Image.file(
+                        File(widget.album.coverPath!),
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: Theme.of(context).colorScheme.primary,
+                        child: const Center(
+                          child: Icon(
+                            Icons.album,
+                            size: 72,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.album.name,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  BlocBuilder<MediaCubit, MediaState>(
-                    builder: (context, state) {
-                      final songs = state.customAlbums[widget.album] ?? [];
-                      final totalDuration = songs.fold<Duration>(
-                        Duration.zero,
-                        (total, song) =>
-                            total + Duration(milliseconds: song.duration ?? 0),
-                      );
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${songs.length} şarkı'),
-                          Text(
-                              'Toplam süre: ${_formatDuration(totalDuration)}'),
-                          Text(
-                              'Oluşturulma: ${_formatDate(widget.album.createdAt)}'),
-                        ],
-                      );
-                    },
-                  ),
-                ],
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Divider(),
-          ),
-          BlocBuilder<MediaCubit, MediaState>(
-            builder: (context, state) {
-              final songs = state.customAlbums[widget.album] ?? [];
-              final sortedSongs = _sortSongs(songs);
-
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index == 0) {
-                      return ListTile(
-                        leading: const Icon(Icons.sort),
-                        title: const Text('Sıralama'),
-                        onTap: () => _showSortOptions(context),
-                      );
-                    }
-
-                    final song = sortedSongs[index - 1];
-
-                    return Builder(
-                      builder: (context) {
-                        final isPlaying =
-                            context.select<AudioPlayerCubit, bool>(
-                          (cubit) => cubit.state.currentSong?.id == song.id,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.album.name,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    BlocBuilder<MediaCubit, MediaState>(
+                      builder: (context, state) {
+                        final songs = state.customAlbums[widget.album] ?? [];
+                        final totalDuration = songs.fold<Duration>(
+                          Duration.zero,
+                          (total, song) =>
+                              total +
+                              Duration(milliseconds: song.duration ?? 0),
                         );
 
-                        return ListTile(
-                          contentPadding: ListItemStyle.listItemPadding,
-                          leading: QueryArtworkWidget(
-                            id: song.id,
-                            type: ArtworkType.AUDIO,
-                            nullArtworkWidget: Container(
-                              width: ListItemStyle.artworkSize,
-                              height: ListItemStyle.artworkSize,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer,
-                                borderRadius: BorderRadius.circular(
-                                    ListItemStyle.artworkBorderRadius),
-                              ),
-                              child: Icon(
-                                Icons.music_note,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            song.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isPlaying
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer
-                                  : null,
-                              fontWeight: isPlaying ? FontWeight.bold : null,
-                            ),
-                          ),
-                          subtitle: Text(
-                            song.artist ?? 'Bilinmeyen Sanatçı',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isPlaying
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer
-                                      .withOpacity(0.7)
-                                  : null,
-                            ),
-                          ),
-                          trailing: Text(
-                            _formatDuration(
-                                Duration(milliseconds: song.duration ?? 0)),
-                            style: TextStyle(
-                              color: isPlaying
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer
-                                  : Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.color,
-                            ),
-                          ),
-                          onTap: () {
-                            context.read<AudioPlayerCubit>().play(
-                                  song,
-                                  playlist: songs,
-                                  source: PlaylistSource.album,
-                                );
-                          },
-                        ).withListItemStyle(
-                          context: context,
-                          isPlaying: isPlaying,
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${songs.length} şarkı'),
+                            Text(
+                                'Toplam süre: ${_formatDuration(totalDuration)}'),
+                            Text(
+                                'Oluşturulma: ${_formatDate(widget.album.createdAt)}'),
+                          ],
                         );
                       },
-                    );
-                  },
-                  childCount: songs.length + 1,
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
-        ],
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Divider(),
+            ),
+            BlocBuilder<MediaCubit, MediaState>(
+              builder: (context, state) {
+                final songs = state.customAlbums[widget.album] ?? [];
+                final sortedSongs = _sortSongs(songs);
+
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index == 0) {
+                        return ListTile(
+                          leading: const Icon(Icons.sort),
+                          title: const Text('Sıralama'),
+                          onTap: () => _showSortOptions(context),
+                        );
+                      }
+
+                      final song = sortedSongs[index - 1];
+
+                      return Builder(
+                        builder: (context) {
+                          final isPlaying =
+                              context.select<AudioPlayerCubit, bool>(
+                            (cubit) => cubit.state.currentSong?.id == song.id,
+                          );
+
+                          return ListTile(
+                            contentPadding: ListItemStyle.listItemPadding,
+                            leading: CachedArtwork(
+                              id: song.id,
+                              size: ListItemStyle.artworkSize,
+                              borderRadius: ListItemStyle.artworkBorderRadius,
+                            ),
+                            title: Text(
+                              song.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: isPlaying
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer
+                                    : null,
+                                fontWeight: isPlaying ? FontWeight.bold : null,
+                              ),
+                            ),
+                            subtitle: Text(
+                              song.artist ?? 'Bilinmeyen Sanatçı',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Text(
+                              _formatDuration(
+                                  Duration(milliseconds: song.duration ?? 0)),
+                            ),
+                            onTap: () {
+                              final songs =
+                                  state.customAlbums[widget.album] ?? [];
+                              if (songs.isNotEmpty) {
+                                context.read<AudioPlayerCubit>().play(
+                                      song,
+                                      playlist: songs,
+                                      source: PlaylistSource.album,
+                                    );
+                              }
+                            },
+                          ).withListItemStyle(
+                            context: context,
+                            isPlaying: isPlaying,
+                          );
+                        },
+                      );
+                    },
+                    childCount: songs.length + 1,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        floatingActionButton: ScrollToTopButton(
+          scrollController: _scrollController,
+          heroTag: 'album_detail_scroll_top',
+        ),
       ),
     );
   }

@@ -58,7 +58,7 @@ class _MediaListState extends State<MediaList>
     return Scaffold(
       body: Column(
         children: [
-          // Üst bar - Sıralama ve görünüm seçenekleri
+          // Üst bar - Sıralama, görünüm ve seçim modu seçenekleri
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -78,6 +78,25 @@ class _MediaListState extends State<MediaList>
                   },
                   tooltip: _isGridView ? 'Liste Görünümü' : 'Grid Görünümü',
                 ),
+                if (_isSelectionMode) ...[
+                  const Spacer(),
+                  Text('${_selectedSongs.length} seçildi'),
+                  IconButton(
+                    icon: const Icon(Icons.playlist_add),
+                    onPressed: () => _showAddToAlbumDialog(context),
+                    tooltip: 'Albüme Ekle',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _isSelectionMode = false;
+                        _selectedSongs.clear();
+                      });
+                    },
+                    tooltip: 'Seçimi İptal Et',
+                  ),
+                ],
               ],
             ),
           ),
@@ -109,6 +128,7 @@ class _MediaListState extends State<MediaList>
       ),
       floatingActionButton: ScrollToTopButton(
         scrollController: _scrollController,
+        heroTag: 'media_list_scroll_top',
       ),
     );
   }
@@ -165,37 +185,83 @@ class _MediaListState extends State<MediaList>
         return Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => widget.onItemTap(song),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            onTap: _isSelectionMode
+                ? () {
+                    setState(() {
+                      if (_selectedSongs.contains(song)) {
+                        _selectedSongs.remove(song);
+                        if (_selectedSongs.isEmpty) {
+                          _isSelectionMode = false;
+                        }
+                      } else {
+                        _selectedSongs.add(song);
+                      }
+                    });
+                  }
+                : () => widget.onItemTap(song),
+            onLongPress: () {
+              setState(() {
+                _isSelectionMode = true;
+                _selectedSongs.add(song);
+              });
+            },
+            child: Stack(
               children: [
-                Expanded(
-                  child: CachedArtwork(
-                    id: song.id,
-                    size: 200,
-                    borderRadius: 0,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        song.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: CachedArtwork(
+                        id: song.id,
+                        size: 200,
+                        borderRadius: 0,
                       ),
-                      Text(
-                        song.artist ?? 'Bilinmeyen Sanatçı',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            song.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          Text(
+                            song.artist ?? 'Bilinmeyen Sanatçı',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+                if (_isSelectionMode)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _selectedSongs.contains(song)
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(
+                          _selectedSongs.contains(song)
+                              ? Icons.check
+                              : Icons.check_box_outline_blank,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -393,11 +459,15 @@ class MediaListItem extends StatelessWidget {
       child: ListTile(
         contentPadding: ListItemStyle.listItemPadding,
         selected: isSelected,
-        leading: CachedArtwork(
-          key: ValueKey('artwork_${song.id}'),
-          id: song.id,
-          size: ListItemStyle.artworkSize,
-          borderRadius: ListItemStyle.artworkBorderRadius,
+        leading: RepaintBoundary(
+          child: CachedArtwork(
+            key: ValueKey('artwork_${song.id}'),
+            id: song.id,
+            size: ListItemStyle.artworkSize,
+            borderRadius: ListItemStyle.artworkBorderRadius,
+            memCacheWidth: ListItemStyle.artworkSize.toInt(),
+            memCacheHeight: ListItemStyle.artworkSize.toInt(),
+          ),
         ),
         title: Text(
           song.title,
