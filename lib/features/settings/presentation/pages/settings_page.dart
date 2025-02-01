@@ -15,11 +15,24 @@ class SettingsPage extends StatelessWidget {
       ),
       body: ListView(
         children: [
+          const SizedBox(height: 8),
           _buildThemeSection(context),
+          const Divider(),
           _buildColorSection(context),
+          const Divider(height: 32),
+          Padding(
+            padding: const EdgeInsets.only(left: 16, bottom: 8),
+            child: Text(
+              'Önbellek Ayarları',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ),
           ListTile(
-            title: Text('Önbellek Boyutu'),
-            subtitle: Text('Medya önbelleği için maksimum boyut'),
+            leading: const Icon(Icons.storage_outlined),
+            title: const Text('Önbellek Boyutu'),
+            subtitle: const Text('Medya önbelleği için maksimum boyut'),
             trailing: DropdownButton<int>(
               value: context.watch<SettingsProvider>().maxCacheSize,
               items: [
@@ -33,6 +46,7 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
           ListTile(
+            leading: const Icon(Icons.cleaning_services_outlined),
             title: const Text('Önbelleği Temizle'),
             subtitle: const Text('Tüm önbelleğe alınmış medyaları temizle'),
             onTap: () async {
@@ -53,25 +67,40 @@ class SettingsPage extends StatelessWidget {
               }
             },
           ),
+          const Divider(),
         ],
       ),
     );
   }
 
   Widget _buildThemeSection(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, state) {
-        return ListTile(
-          leading: Icon(
-            state.isDark ? Icons.dark_mode : Icons.light_mode,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 8),
+          child: Text(
+            'Görünüm',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
           ),
-          title: Text(state.isDark ? 'Karanlık Tema' : 'Aydınlık Tema'),
-          trailing: Switch(
-            value: state.isDark,
-            onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
-          ),
-        );
-      },
+        ),
+        BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, state) {
+            return ListTile(
+              leading: Icon(
+                state.isDark ? Icons.dark_mode : Icons.light_mode,
+              ),
+              title: Text(state.isDark ? 'Karanlık Tema' : 'Aydınlık Tema'),
+              trailing: Switch(
+                value: state.isDark,
+                onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -99,18 +128,17 @@ class SettingsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.all(16.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Text(
             'Tema Rengi',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
