@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_player/core/theme/theme_cubit.dart';
 import 'package:music_player/features/settings/data/providers/settings_provider.dart';
 import '../../../media/data/services/cache_manager.dart';
+import '../../../../features/player/domain/enums/player_style.dart';
+import '../widgets/player_style_preview.dart';
+import './player_style_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -88,15 +91,35 @@ class SettingsPage extends StatelessWidget {
         ),
         BlocBuilder<ThemeCubit, ThemeState>(
           builder: (context, state) {
-            return ListTile(
-              leading: Icon(
-                state.isDark ? Icons.dark_mode : Icons.light_mode,
-              ),
-              title: Text(state.isDark ? 'Karanlık Tema' : 'Aydınlık Tema'),
-              trailing: Switch(
-                value: state.isDark,
-                onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
-              ),
+            return Column(
+              children: [
+                ListTile(
+                  leading: Icon(
+                    state.isDark ? Icons.dark_mode : Icons.light_mode,
+                  ),
+                  title: Text(state.isDark ? 'Karanlık Tema' : 'Aydınlık Tema'),
+                  trailing: Switch(
+                    value: state.isDark,
+                    onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.music_note),
+                  title: const Text('Müzik Çalar Stili'),
+                  subtitle: Text(
+                    context.watch<SettingsProvider>().playerStyle.displayName,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PlayerStylePage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             );
           },
         ),

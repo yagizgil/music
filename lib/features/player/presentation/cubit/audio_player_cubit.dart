@@ -71,7 +71,7 @@ class AudioPlayerCubit extends Cubit<AudioPlayerState> {
     // Loop modu dinleyicisi
     player.loopModeStream.listen((loopMode) {
       emit(state.copyWith(
-        loopMode: loopMode == LoopMode.one || loopMode == LoopMode.all,
+        loopMode: loopMode,
       ));
     });
   }
@@ -189,23 +189,15 @@ class AudioPlayerCubit extends Cubit<AudioPlayerState> {
     }
   }
 
-  Future<void> toggleLoopMode() async {
-    try {
-      final currentMode = player.loopMode;
-      final newMode = switch (currentMode) {
-        LoopMode.off => LoopMode.all, // Kapalıysa playlist döngüsü
-        LoopMode.all =>
-          LoopMode.one, // Playlist döngüsündeyse tek şarkı döngüsü
-        LoopMode.one => LoopMode.off, // Tek şarkı döngüsündeyse kapat
-      };
+  void toggleLoopMode() {
+    final nextMode = switch (state.loopMode) {
+      LoopMode.off => LoopMode.all,
+      LoopMode.all => LoopMode.one,
+      LoopMode.one => LoopMode.off,
+    };
 
-      await player.setLoopMode(newMode);
-      emit(state.copyWith(
-        loopMode: newMode == LoopMode.one || newMode == LoopMode.all,
-      ));
-    } catch (e) {
-      print('Toggle loop mode error: $e');
-    }
+    player.setLoopMode(nextMode);
+    emit(state.copyWith(loopMode: nextMode));
   }
 
   Future<void> playPlaylist(

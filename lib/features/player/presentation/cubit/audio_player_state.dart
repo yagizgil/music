@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:just_audio/just_audio.dart';
 
 part of 'audio_player_cubit.dart';
 
@@ -16,7 +17,7 @@ class AudioPlayerState extends Equatable {
   final double currentPosition;
   final PlaylistSource playlistSource;
   final bool shuffleMode;
-  final bool loopMode;
+  final LoopMode loopMode;
 
   const AudioPlayerState({
     this.status = AudioStatus.initial,
@@ -29,7 +30,7 @@ class AudioPlayerState extends Equatable {
     this.currentPosition = 0,
     this.playlistSource = PlaylistSource.allSongs,
     this.shuffleMode = false,
-    this.loopMode = false,
+    this.loopMode = LoopMode.off,
   });
 
   AudioPlayerState copyWith({
@@ -43,7 +44,7 @@ class AudioPlayerState extends Equatable {
     double? currentPosition,
     PlaylistSource? playlistSource,
     bool? shuffleMode,
-    bool? loopMode,
+    LoopMode? loopMode,
   }) {
     return AudioPlayerState(
       status: status ?? this.status,
