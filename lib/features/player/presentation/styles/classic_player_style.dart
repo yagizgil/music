@@ -4,6 +4,9 @@ import '../../../media/presentation/widgets/cached_artwork.dart';
 import '../cubit/audio_player_cubit.dart';
 import 'base_player_style.dart';
 import '../../domain/enums/playlist_source.dart';
+import '../../domain/enums/player_style.dart';
+import '../../../settings/data/providers/settings_provider.dart';
+import '../widgets/style_popup_menu.dart';
 
 class ClassicPlayerStyle extends BasePlayerStyle {
   ClassicPlayerStyle({
@@ -41,6 +44,7 @@ class ClassicPlayerStyle extends BasePlayerStyle {
         ),
         title: Text(playlistName),
         actions: [
+          const StylePopupMenu(),
           IconButton(
             icon: const Icon(Icons.playlist_play),
             onPressed: () => _pageController.animateToPage(

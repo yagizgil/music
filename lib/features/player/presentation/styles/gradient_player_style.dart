@@ -5,6 +5,9 @@ import '../../../media/presentation/widgets/cached_artwork.dart';
 import '../cubit/audio_player_cubit.dart';
 import 'base_player_style.dart';
 import '../../domain/enums/playlist_source.dart';
+import '../../domain/enums/player_style.dart';
+import '../../../settings/data/providers/settings_provider.dart';
+import '../widgets/style_popup_menu.dart';
 
 class GradientPlayerStyle extends BasePlayerStyle {
   GradientPlayerStyle({
@@ -58,6 +61,9 @@ class GradientPlayerStyle extends BasePlayerStyle {
             playlistName,
             style: const TextStyle(color: Colors.white),
           ),
+          actions: [
+            const StylePopupMenu(color: Colors.white),
+          ],
         ),
         body: Column(
           children: [

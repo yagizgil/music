@@ -6,6 +6,9 @@ import '../../../media/presentation/cubit/media_cubit.dart';
 import '../cubit/audio_player_cubit.dart';
 import '../../domain/enums/playlist_source.dart';
 import 'base_player_style.dart';
+import '../../../settings/data/providers/settings_provider.dart';
+import '../../domain/enums/player_style.dart';
+import '../widgets/style_popup_menu.dart';
 
 class OriginalPlayerStyle extends BasePlayerStyle {
   OriginalPlayerStyle({
@@ -60,38 +63,29 @@ class OriginalPlayerStyle extends BasePlayerStyle {
       child: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.expand_more),
-                    color: Colors.white,
-                    onPressed: onClose,
-                  ),
-                  Expanded(
-                    child: Text(
-                      playlistName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      context.watch<MediaCubit>().isFavorite(state.currentSong!)
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                    ),
-                    color: Colors.white,
-                    onPressed: () => context
-                        .read<MediaCubit>()
-                        .toggleFavorite(state.currentSong!),
-                  ),
-                ],
+            AppBar(
+              title: Text(
+                playlistName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
               ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              actions: [
+                const StylePopupMenu(color: Colors.white),
+                IconButton(
+                  icon: Icon(
+                    context.watch<MediaCubit>().isFavorite(state.currentSong!)
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                  ),
+                  onPressed: () => context
+                      .read<MediaCubit>()
+                      .toggleFavorite(state.currentSong!),
+                ),
+              ],
             ),
             const SizedBox(height: 32),
             Hero(

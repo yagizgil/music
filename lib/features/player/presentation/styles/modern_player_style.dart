@@ -5,6 +5,9 @@ import '../cubit/audio_player_cubit.dart';
 import 'base_player_style.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../domain/enums/playlist_source.dart';
+import '../../domain/enums/player_style.dart';
+import '../../../settings/data/providers/settings_provider.dart';
+import '../widgets/style_popup_menu.dart';
 
 class ModernPlayerStyle extends BasePlayerStyle {
   ModernPlayerStyle({
@@ -69,6 +72,9 @@ class ModernPlayerStyle extends BasePlayerStyle {
                 ],
               ),
               centerTitle: true,
+              actions: [
+                const StylePopupMenu(color: Colors.white),
+              ],
             ),
             Expanded(
               child: Column(

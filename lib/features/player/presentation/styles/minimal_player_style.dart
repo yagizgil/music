@@ -5,6 +5,9 @@ import '../../../media/presentation/widgets/cached_artwork.dart';
 import '../cubit/audio_player_cubit.dart';
 import 'base_player_style.dart';
 import '../../domain/enums/playlist_source.dart';
+import '../../domain/enums/player_style.dart';
+import '../../../settings/data/providers/settings_provider.dart';
+import '../widgets/style_popup_menu.dart';
 
 class MinimalPlayerStyle extends BasePlayerStyle {
   MinimalPlayerStyle({
@@ -41,10 +44,11 @@ class MinimalPlayerStyle extends BasePlayerStyle {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.expand_more),
+                  icon: const Icon(Icons.arrow_back),
                   onPressed: onClose,
                 ),
                 const Spacer(),
+                const StylePopupMenu(),
               ],
             ),
           ),
