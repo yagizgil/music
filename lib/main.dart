@@ -99,8 +99,8 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme(themeState.primaryColor),
           darkTheme: AppTheme.darkTheme(themeState.primaryColor),
           themeMode: themeState.themeMode,
-          home: const SafeArea(
-            child: HomePage(),
+          home: Scaffold(
+            body: SafeArea(child: HomePage()),
           ),
           onGenerateRoute: (settings) {
             switch (settings.name) {
