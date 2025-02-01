@@ -70,6 +70,7 @@ dependencies:
   # New dependencies
   image_picker: ^1.0.0
   flutter_launcher_icons: ^0.13.1
+  top_modal_sheet: ^2.1.0
 
 
 dev_dependencies:
