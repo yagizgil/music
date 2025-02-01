@@ -36,10 +36,25 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           controller: _scrollController,
           slivers: [
             SliverAppBar(
-              expandedHeight: 200,
+              expandedHeight: 250,
               pinned: true,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              foregroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(32),
+                ),
+              ),
               actions: [
                 PopupMenuButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.more_vert),
+                  ),
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       child: const Text('Kapak Fotoğrafını Değiştir'),
@@ -56,23 +71,68 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                   ],
                 ),
               ],
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(widget.album.name),
-                background: widget.album.coverPath != null
-                    ? Image.file(
-                        File(widget.album.coverPath!),
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        color: Theme.of(context).colorScheme.primary,
-                        child: const Center(
-                          child: Icon(
-                            Icons.album,
-                            size: 72,
-                            color: Colors.white,
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(32),
+                  ),
+                ),
+                child: FlexibleSpaceBar(
+                  title: Text(
+                    widget.album.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                  background: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(32),
+                    ),
+                    child: Stack(
+                      children: [
+                        if (widget.album.coverPath != null)
+                          Image.file(
+                            File(widget.album.coverPath!),
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          )
+                        else
+                          Container(
+                            color: Theme.of(context).colorScheme.primary,
+                            child: Center(
+                              child: Icon(
+                                Icons.album,
+                                size: 72,
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                            ),
+                          ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.7),
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.7),
+                              ],
+                              stops: const [0.0, 0.5, 1.0],
+                            ),
                           ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
             SliverToBoxAdapter(
