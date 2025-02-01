@@ -35,7 +35,11 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(
+      length: 6,
+      vsync: this,
+      initialIndex: 2,
+    );
   }
 
   @override
@@ -48,6 +52,7 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 6,
+      initialIndex: 2,
       child: Scaffold(
         body: Column(
           children: [
