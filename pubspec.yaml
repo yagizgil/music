@@ -69,7 +69,6 @@ dependencies:
 
   # New dependencies
   image_picker: ^1.0.0
-  liquid_swipe: ^3.1.0
   flutter_launcher_icons: ^0.13.1
 
 
